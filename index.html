@@ -1,0 +1,507 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>暖心留言气泡</title>
+    <style>
+        /* 全局样式 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #e6f7ff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            overflow: hidden; /* 禁用滚动 */
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        /* 固定顶部标题 */
+        .top-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .top-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .top-header .subtitle {
+            font-size: 16px;
+            color: #666;
+            font-weight: 400;
+            max-width: 80%;
+            margin: 0 auto;
+        }
+        
+        /* 固定底部热线 */
+        .bottom-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .bottom-footer p {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        /* 气泡容器 */
+        #flow-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        
+        /* 气泡样式 */
+        .capsule {
+            position: absolute;
+            display: flex;
+            align-items: flex-start;
+            background-color: white;
+            border-radius: 18px;
+            padding: 12px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            max-width: 280px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation-timing-function: linear;
+            animation-fill-mode: forwards;
+        }
+        
+        /* 气泡悬停效果 */
+        .capsule:hover {
+            transform: scale(1.05);
+            z-index: 999 !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+            animation-play-state: paused;
+        }
+        
+        /* 头像样式 */
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        /* 内容区域 */
+        .content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        /* 昵称 */
+        .nickname {
+            font-weight: 600;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        /* 留言文字 */
+        .message {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        
+        /* 气泡动画 */
+        @keyframes flowLeft {
+            from {
+                transform: translateX(100vw);
+            }
+            to {
+                transform: translateX(-100%);
+            }
+        }
+        
+        /* 留言表单 */
+        .message-form {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            z-index: 999;
+            transition: all 0.3s ease;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .form-group {
+            flex: 1;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4ECDC4;
+        }
+        
+        .form-group textarea {
+            resize: none;
+            height: 60px;
+        }
+        
+        .submit-btn {
+            background-color: #4ECDC4;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            float: right;
+        }
+        
+        .submit-btn:hover {
+            background-color: #3dbdb4;
+        }
+        
+        .submit-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 600px) {
+            .top-header h1 {
+                font-size: 20px;
+            }
+            
+            .bottom-footer p {
+                font-size: 12px;
+            }
+            
+            .capsule {
+                max-width: 220px;
+                padding: 10px;
+            }
+            
+            .avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+                margin-right: 8px;
+            }
+            
+            .nickname {
+                font-size: 13px;
+            }
+            
+            .message {
+                font-size: 12px;
+            }
+            
+            .message-form {
+                width: 95%;
+                padding: 12px;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .form-group textarea {
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 固定顶部标题 -->
+    <div class="top-header">
+        <h1>亲爱的，世界爱着你</h1>
+        <p class="subtitle">人生是一场没有剧本的动画，而你永远是自己故事里的主角    
+ —— 24动画二班团支部</p>
+    </div>
+    
+    <!-- 气泡容器 -->
+    <div id="flow-container"></div>
+    
+    <!-- 留言表单 -->
+    <div class="message-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="name">你的名字</label>
+                <input type="text" id="name" placeholder="请输入你的名字" maxlength="10">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="message">你的祝福</label>
+                <textarea id="message" placeholder="写下你想对世界说的话..." maxlength="100"></textarea>
+            </div>
+        </div>
+        <button type="button" id="submit-btn" class="submit-btn" disabled>发送祝福</button>
+    </div>
+    
+    <!-- 固定底部热线 -->
+    <div class="bottom-footer">
+        <p>如有需要，请拨打心理援助热线：400-123-4567</p>
+    </div>
+
+    <script>
+        // 配置对象
+        const config = {
+            spawnInterval: 400, // 生成频率（毫秒）- 进一步缩短生成间隔
+            minDuration: 12000,  // 最小动画时长（毫秒）- 增加动画时长
+            maxDuration: 20000  // 最大动画时长（毫秒）- 增加动画时长
+        };
+        
+        // 数据源
+        const messages = [
+            "今天的阳光真温暖，希望你的心情也是如此",
+            "每一个平凡的日子里，都藏着不平凡的美好",
+            "你很棒，记得要对自己好一点",
+            "困难只是暂时的，明天会更好",
+            "相信自己，你比想象中更强大",
+            "每一步都算数，不要着急",
+            "你值得被爱，被温柔以待",
+            "今天也要记得微笑哦",
+            "生活虽苦，但你是甜的",
+            "慢慢来，比较快",
+            "你已经做得很好了",
+            "别忘记照顾好自己的情绪",
+            "世界因为有你而更美好",
+            "记得深呼吸，一切都会过去",
+            "每一天都是新的开始",
+            "你的努力，时光不会辜负",
+            "保持热爱，奔赴山海",
+            "心若向阳，无畏悲伤",
+            "简单生活，热爱所爱",
+            "平安喜乐，万事顺遂"
+        ];
+        
+        const nicknames = [
+            "李圣鑫", "黄韵淇", "赵江楠", "戚胜平", "徐家子", "刘冰清", 
+            "陈欣", "蒋语馨", "李晓艺", "张婧姝", "郭欣怡", "张炜"
+        ];
+        
+        const avatarColors = [
+            "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
+            "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
+            "#F8C471", "#82E0AA", "#F1948A", "#AED6F1", "#D7BDE2",
+            "#A9DFBF", "#FAD7A0", "#F9CCCC", "#C9E4CA", "#C39BD3"
+        ];
+        
+        // 获取容器
+        const container = document.getElementById('flow-container');
+        
+        // 创建气泡函数
+        function createCapsule() {
+            // 创建气泡元素
+            const capsule = document.createElement('div');
+            capsule.className = 'capsule';
+            
+            // 随机选择数据
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            const randomNickname = nicknames[Math.floor(Math.random() * nicknames.length)];
+            const randomColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
+            
+            // 随机生成其他属性
+            const randomTop = Math.floor(Math.random() * 81) + 5; // 5% - 85%
+            const randomScale = (Math.random() * 0.3) + 0.85; // 0.85 - 1.15
+            const randomOpacity = (Math.random() * 0.2) + 0.8; // 0.8 - 1.0
+            const randomDuration = Math.floor(Math.random() * (config.maxDuration - config.minDuration)) + config.minDuration;
+            
+            // 计算z-index（基于透明度和缩放，使更大更清晰的气泡在下层）
+            const zIndex = Math.floor((1 - (randomOpacity - 0.8) / 0.2) * 500) + Math.floor((1 - (randomScale - 0.85) / 0.3) * 500);
+            
+            // 设置气泡样式
+            capsule.style.top = `${randomTop}%`;
+            capsule.style.transform = `scale(${randomScale})`;
+            capsule.style.opacity = randomOpacity;
+            capsule.style.zIndex = zIndex;
+            capsule.style.animationName = 'flowLeft';
+            capsule.style.animationDuration = `${randomDuration}ms`;
+            
+            // 获取昵称首字母
+            const initial = randomNickname.charAt(0);
+            
+            // 设置气泡内容
+            capsule.innerHTML = `
+                <div class="avatar" style="background-color: ${randomColor}">${initial}</div>
+                <div class="content">
+                    <div class="nickname">${randomNickname}</div>
+                    <div class="message">${randomMessage}</div>
+                </div>
+            `;
+            
+            // 添加到容器
+            container.appendChild(capsule);
+            
+            // 动画结束后移除元素
+            capsule.addEventListener('animationend', () => {
+                capsule.remove();
+            });
+        }
+        
+        // 预生成初始气泡
+        function preGenerateCapsules() {
+            const initialCount = 15; // 初始生成15个气泡 - 进一步增加初始气泡数量
+            
+            for (let i = 0; i < initialCount; i++) {
+                setTimeout(() => {
+                    createCapsule();
+                }, i * 100); // 每100ms生成一个 - 进一步缩短生成间隔
+            }
+        }
+        
+        // 获取表单元素
+        const nameInput = document.getElementById('name');
+        const messageInput = document.getElementById('message');
+        const submitBtn = document.getElementById('submit-btn');
+        
+        // 验证表单
+        function validateForm() {
+            const name = nameInput.value.trim();
+            const message = messageInput.value.trim();
+            submitBtn.disabled = !(name && message);
+        }
+        
+        // 添加实时验证
+        nameInput.addEventListener('input', validateForm);
+        messageInput.addEventListener('input', validateForm);
+        
+        // 提交表单
+        submitBtn.addEventListener('click', () => {
+            const name = nameInput.value.trim();
+            const message = messageInput.value.trim();
+            
+            if (name && message) {
+                // 添加到数据源
+                if (!nicknames.includes(name)) {
+                    nicknames.push(name);
+                }
+                messages.push(message);
+                
+                // 立即创建一个新气泡
+                const capsule = document.createElement('div');
+                capsule.className = 'capsule';
+                
+                // 使用用户输入的数据
+                const randomColor = avatarColors[Math.floor(Math.random() * avatarColors.length)];
+                
+                // 随机生成其他属性
+                const randomTop = Math.floor(Math.random() * 81) + 5; // 5% - 85%
+                const randomScale = (Math.random() * 0.3) + 0.85; // 0.85 - 1.15
+                const randomOpacity = (Math.random() * 0.2) + 0.8; // 0.8 - 1.0
+                const randomDuration = Math.floor(Math.random() * (config.maxDuration - config.minDuration)) + config.minDuration;
+                
+                // 计算z-index（基于透明度和缩放，使更大更清晰的气泡在下层）
+                const zIndex = Math.floor((1 - (randomOpacity - 0.8) / 0.2) * 500) + Math.floor((1 - (randomScale - 0.85) / 0.3) * 500);
+                
+                // 设置气泡样式
+                capsule.style.top = `${randomTop}%`;
+                capsule.style.transform = `scale(${randomScale})`;
+                capsule.style.opacity = randomOpacity;
+                capsule.style.zIndex = zIndex;
+                capsule.style.animationName = 'flowLeft';
+                capsule.style.animationDuration = `${randomDuration}ms`;
+                
+                // 获取昵称首字母
+                const initial = name.charAt(0);
+                
+                // 设置气泡内容
+                capsule.innerHTML = `
+                    <div class="avatar" style="background-color: ${randomColor}">${initial}</div>
+                    <div class="content">
+                        <div class="nickname">${name}</div>
+                        <div class="message">${message}</div>
+                    </div>
+                `;
+                
+                // 添加到容器
+                container.appendChild(capsule);
+                
+                // 动画结束后移除元素
+                capsule.addEventListener('animationend', () => {
+                    capsule.remove();
+                });
+                
+                // 清空表单
+                nameInput.value = '';
+                messageInput.value = '';
+                validateForm();
+                
+                // 显示成功提示
+                alert('你的祝福已发送！');
+            }
+        });
+        
+        // 初始化
+        function init() {
+            // 预生成初始气泡
+            preGenerateCapsules();
+            
+            // 设置定时器持续生成气泡
+            setInterval(createCapsule, config.spawnInterval);
+        }
+        
+        // 页面加载完成后初始化
+        window.addEventListener('load', init);
+    </script>
+
+</body></html>
